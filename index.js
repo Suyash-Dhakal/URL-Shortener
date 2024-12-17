@@ -1,16 +1,18 @@
 const express=require('express');
+const cookieParser=require('cookie-parser');
 const path=require('path');
 const {connectToMongoDB}=require("./database/connect");
+const { restrictToLoggedinUserOnly, checkAuth } = require("./middlewares/auth");
 const urlRoute=require('./routes/url');
 const userRoute=require('./routes/user');
+const staticRoute=require('./routes/staticRouter')
 const URL =require('./models/url');
 // const cors = require('cors'); // Import CORS middleware
 const app=express();
-// const PORT=8001;
+
 const PORT=process.env.PORT || 8001;
 
-// Enable CORS
-// app.use(cors());
+
 
 connectToMongoDB('mongodb://localhost:27017/short-url')
 .then(()=>{
@@ -21,32 +23,20 @@ connectToMongoDB('mongodb://localhost:27017/short-url')
 app.set('view engine','ejs');
 app.set('views',path.resolve('./views'));
 
-// connectToMongoDB(process.env.MONGO_URL)
-// .then(()=>{
-//     console.log('MongoDB connected');
-    
-// })
 
 
-
-app.get('/', (req, res) => {
-    res.render('home');
-});
-
-app.use(express.static('public'));
 
 
 app.use(express.json());
+app.use(express.urlencoded({extended:false}));
+app.use(cookieParser());
 
-app.use('/url',urlRoute);
+app.use('/url',restrictToLoggedinUserOnly,urlRoute);
 app.use('/user',userRoute);
+app.use('/',checkAuth,staticRoute);
 
-app.get('/test',async (req,res)=>{
-    const allUrls=await URL.find({});
-    return res.render("home",{urls:allUrls});
-});
 
-app.get('/:shortID', async (req, res) => {
+app.get('/url/:shortID', async (req, res) => {
     const shortID = req.params.shortID; // Match route parameter and DB field name
     console.log(`Received shortID: ${shortID}`);
 
