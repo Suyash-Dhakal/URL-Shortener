@@ -1,5 +1,6 @@
 const bcrypt=require('bcrypt');
-const saltRounds=10; //higher salt rounds means more secure, but slower
+const saltRounds = parseInt(process.env.saltRounds); 
+//higher salt rounds means more secure, but slower
 const { v4: uuidv4 } = require("uuid");
 const {setUser}=require('../service/auth');
 const User=require('../models/user');
